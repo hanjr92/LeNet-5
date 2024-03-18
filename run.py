@@ -5,10 +5,7 @@ import torch.optim as optim
 from torchvision.datasets.mnist import MNIST
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
-import visdom
-import onnx
 
-viz = visdom.Visdom()
 
 data_train = MNIST('./data/mnist',
                    download=True,
@@ -55,13 +52,6 @@ def train(epoch):
         if i % 10 == 0:
             print('Train - Epoch %d, Batch: %d, Loss: %f' % (epoch, i, loss.detach().cpu().item()))
 
-        # Update Visualization
-        if viz.check_connection():
-            cur_batch_win = viz.line(torch.Tensor(loss_list), torch.Tensor(batch_list),
-                                     win=cur_batch_win, name='current_batch_loss',
-                                     update=(None if cur_batch_win is None else 'replace'),
-                                     opts=cur_batch_win_opts)
-
         loss.backward()
         optimizer.step()
 
@@ -83,13 +73,6 @@ def test():
 def train_and_test(epoch):
     train(epoch)
     test()
-
-    dummy_input = torch.randn(1, 1, 32, 32, requires_grad=True)
-    torch.onnx.export(net, dummy_input, "lenet.onnx")
-
-    onnx_model = onnx.load("lenet.onnx")
-    onnx.checker.check_model(onnx_model)
-
 
 def main():
     for e in range(1, 16):
